@@ -1,6 +1,6 @@
 ### Try out DTW with a 1 dimensional signal
 
-################################################################################
+
 ## Setup
 ################################################################################
 setwd('C:/Users/lchco/OneDrive/Documents/School/CSU/Spring_2024/STAT472/physical+therapy+exercises+dataset/')
@@ -124,10 +124,11 @@ metric <- 'acc' # Choose from acc, gyr, mag
 axis <- 'x' # Choose from x, y, z
 style <- 1 # Way the exercise is performed, 1:3
 
-df <- get1D_from_metric(getMetric(exerciseType, sensorUnit, metric), axis, style)
-
-
+df <- get1D_from_metric(getMetric(exerciseType, sensorUnit, metric), axis, style) 
 ################################################################################
+
+
+
 ## Doing DTW
 ################################################################################
 # Plot data
@@ -135,11 +136,26 @@ df %>%
   ggplot() +
   geom_line(aes(x=time.index, y=acc1), col='orange', size=1.5) +
   geom_line(aes(x=time.index, y=acc2), col='dodgerblue', size=1.5) +
-  geom_line(aes(x=time.index, y=acc3), col='red2', size=1.5) +
-  geom_line(aes(x=time.index, y=acc4), col='green2', size=1.5) +
-  geom_line(aes(x=time.index, y=acc5), size=1.5) +
+#  geom_line(aes(x=time.index, y=acc3), col='red2', size=1.5) +
+#  geom_line(aes(x=time.index, y=acc4), col='green2', size=1.5) +
+#  geom_line(aes(x=time.index, y=acc5), size=1.5) +
   labs(title=paste('Exercise type ',exerciseType,
                    ', Exercise style ',style,
                    ', Unit ',sensorUnit,
                    ', ',axis,' coordinate, Accelerometer', sep=''))
+
+alignment <- dtw(na.omit(df$acc1), na.omit(df$acc2), k=T)
+
+alignment %>%
+  plot(type='threeway', off=1, match.lty=2)
+
+dtw(na.omit(df$acc1), na.omit(df$acc2), k=T, step=typeIIc) %>%
+  dtwPlotDensity()
+
+################################################################################
+
+
+
+
+
 
