@@ -102,7 +102,7 @@ tSesh_all_sensors %>%
 
 ## Get all data for an exercise type
 e <- 1 # exercise type, 1:8
-u <- 2 # sensor unit, 1:5
+u <- 1 # sensor unit, 1:5
 metric <- 'acc' # Choose from acc, gyr, mag
 
 tTime1 <- read.table(file=paste('s',1,'/e',e,'/template_times.txt', sep=''), header=TRUE, sep=';')

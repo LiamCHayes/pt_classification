@@ -149,7 +149,7 @@ alignment <- dtw(na.omit(df$acc1), na.omit(df$acc2), k=T)
 alignment %>%
   plot(type='threeway', off=1, match.lty=2)
 
-dtw(na.omit(df$acc1), na.omit(df$acc2), k=T, step=typeIIc) %>%
+dtw(na.omit(df$acc1), na.omit(df$acc2), k=T, step=typeIIIc) %>%
   dtwPlotDensity()
 
 ################################################################################
