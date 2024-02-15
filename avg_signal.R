@@ -13,16 +13,36 @@ getRep <- function(template_session, template_time, type) {
   template_session %>%
     filter(time.index >= t$start & time.index <= t$end)
 }
+plottingFormat <- function(template_session) {
+  acc <- template_session %>%
+    select(time.index, acc_x, acc_y, acc_z) %>%
+    pivot_longer(cols = starts_with('acc_'), 
+                 names_to = 'coord', 
+                 names_prefix = 'acc_', 
+                 values_to = 'acc') 
+  gyr <- template_session %>%
+    select(time.index, gyr_x, gyr_y, gyr_z) %>%
+    pivot_longer(cols = starts_with('gyr_'), 
+                 names_to = 'coord', 
+                 names_prefix = 'gyr_', 
+                 values_to = 'gyr') 
+  mag <- template_session %>%
+    select(time.index, mag_x, mag_y, mag_z) %>%
+    pivot_longer(cols = starts_with('mag_'), 
+                 names_to = 'coord', 
+                 names_prefix = 'mag_', 
+                 values_to = 'mag') 
+  list(acc, gyr, mag) %>% reduce(full_join, by=c('time.index', 'coord'))
+}
 ################################################################################
 
 
 ## Get data in the right format
 ################################################################################
-s <- 1 # Session number, 1:5
 e <- 1 # Exercise type, 1:8
-u <- 1 # Sensor unit, 1:5
+u <- 2 # Sensor unit, 1:5
 
-# For each session, get all 5 sensors for a specific exercise
+# Get all sessions given an exercise and a sensor
 session_list <- list()
 for (i in 1:5) {
   df <- read.table(file=paste('s',i,'/e',e,'/u',u,'/template_session.txt', sep=''), header=TRUE, sep=';') %>%
@@ -44,3 +64,77 @@ data.frame(i=seq(1,length(new_acc_x_2)), x1=session_list$acc_x_1, x2=new_acc_x_2
   ggplot() +
   geom_line(aes(x=i, y=x1)) +
   geom_line(aes(x=i, y=x2), col='red')
+
+# Align all acceleration x vectors and take average
+acc_x <- session_list[seq(1,45,by=9)]
+m <- which(lengths(acc_x)==max(lengths(acc_x)))
+vec1 <- acc_x[[m]]
+acc_x <- acc_x[-m]
+while (length(acc_x) >= 1) {
+  m <- which(lengths(acc_x)==max(lengths(acc_x)))
+  vec2 <- acc_x[[m]]
+  acc_x <- acc_x[-m]
+  
+  alignment <- dtw(vec1, vec2, k=T, step=typeIIIc)
+  new_vec2 <- rep(0, length(alignment$index2))
+  new_vec2[alignment$index1] <- vec2[alignment$index2]
+  
+  vec1 <- (vec1 + new_vec2)/2
+}
+rm(acc_x)
+
+dtw(vec1, session_list$acc_x_1)$distance
+dtw(vec1, session_list$acc_x_2)$distance
+dtw(vec1, session_list$acc_x_3)$distance
+dtw(vec1, session_list$acc_x_4)$distance
+dtw(vec1, session_list$acc_x_5)$distance
+
+# Create a function to average over all sessions for a specific exercise, exercise type, and sensor
+avgExercise <- function(exercise, sensor, exerciseStyle) {
+  session_list <- list()
+  for (i in 1:5) {
+    df <- read.table(file=paste('s',i,'/e',e,'/u',u,'/template_session.txt', sep=''), header=TRUE, sep=';') %>%
+      getRep(read.table(file=paste('s',i,'/e',e,'/template_times.txt', sep=''), header=TRUE, sep=';'), 1) %>%
+      select(-time.index)
+    colnames(df) <- paste(colnames(df), i, sep='_')
+    session_list <- c(session_list, df)
+  }
+  
+  df <- list()
+  for (i in 1:9) {
+    metrics <- session_list[seq(i,45,by=9)]
+    m <- which(lengths(metrics)==max(lengths(metrics)))
+    vec1 <- metrics[[m]]
+    metrics <- metrics[-m]
+    while (length(metrics) >= 1) {
+      m <- which(lengths(metrics)==max(lengths(metrics)))
+      vec2 <- metrics[[m]]
+      metrics <- metrics[-m]
+      
+      alignment <- dtw(vec1, vec2, k=T, step=typeIIIc)
+      new_vec2 <- rep(0, length(alignment$index2))
+      new_vec2[alignment$index1] <- vec2[alignment$index2]
+      
+      vec1 <- (vec1 + new_vec2)/2
+    }
+    df <- c(df, list(vec1))
+  }
+  names(df) <- c('acc_x', 'acc_y', 'acc_z', 'gyr_x', 'gyr_y', 'gyr_z', 'mag_x', 'mag_y', 'mag_z')
+  df %>% as.data.frame() %>%
+    mutate(time.index = 1:length(vec1))
+}
+
+avgExercise(1, 1, 1) %>% 
+  plottingFormat() %>%
+  ggplot() +
+  geom_line(aes(x=time.index, y=acc), size=1.5) +
+  geom_line(aes(x=time.index, y=gyr), size=1.5, col='red1') +
+  geom_line(aes(x=time.index, y=mag), size=1.5, col='blue1') +
+  facet_grid(coord~.)
+  
+
+
+
+
+
+
