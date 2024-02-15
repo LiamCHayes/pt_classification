@@ -143,7 +143,8 @@ rep4 <- getRep(s4e1u1, time41, 1) %>% select(-time.index)
 rep5 <- getRep(s5e1u1, time51, 1) %>% select(-time.index)
 
 for (i in 1:9) {
-  dtw(rep1[,i], rep3[,i], keep=T, step=typeIa)$distance %>% print()
+  if (i==1) print('DTW differences between session 1 and 2')
+  paste(names(rep1)[i],": ",dtw(rep1[,i], rep2[,i], keep=T, step=typeIa)$distance, sep='') %>% print()
 }
 
 
