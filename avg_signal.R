@@ -4,6 +4,8 @@
 ################################################################################
 setwd('C:/Users/lchco/OneDrive/Documents/School/CSU/Spring_2024/STAT472/physical+therapy+exercises+dataset/')
 
+library(dtw)
+library(tidyverse)
 library(ggplot2)
 
 # Functions
