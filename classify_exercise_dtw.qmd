@@ -325,7 +325,7 @@ for (e in 1:8) {
 print(paste("Classification: ", which.min(distances), sep=''))
 ```
 
-In this case we choose exercise `r which.min(distances)` with a distance of `r round(distances[which.min(distances)],3)`, which is the correct classification
+In this case we choose exercise `r which.min(distances)` with a distance of `r round(distances[which.min(distances)],3)`, which is the correct classification.
 
 # Code
 

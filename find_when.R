@@ -1,4 +1,4 @@
-### Comparing exercises to average signal
+### Identify when an exercise is happening
 
 ## Setup
 ################################################################################
@@ -130,29 +130,21 @@ getExercise <- function(exercise, session, startTime, endTime) {
     filter(time.index >= startTime & time.index <= endTime)
 }
 
-# Get data
-avgExercise_type1 <- getAllAvgExercises(1)
-avgExercise_type2 <- getAllAvgExercises(2)
-avgExercise_type3 <- getAllAvgExercises(3)
-################################################################################
-
-
-# Compare an exercise to an average exercise
-################################################################################
-tTime <- read.table(file=paste('s',1,'/e',1,'/template_times.txt', sep=''), header=TRUE, sep=';')
-
-# Exercise 1 from session 1, type 1 (performed correctly)
-e1s1t1 <- getExercise(exercise=1, session=1, startTime=tTime$start[1], endTime=tTime$end[1])
-
-# Compare with dtw
-dtw(e1s1t1$acc_y_e1_u1, avgExercise_type1[[1]]$acc_y_e1_u1, k=T, step=typeIIIc) %>%
-  plot(type='two')
-
-dtw(e1s1t1$acc_y_e1_u1, avgExercise_type1[[2]]$acc_y_e2_u1, k=T, step=typeIIIc) %>%
-  plot(type='two')
-
-# Compare all with dtw and get average difference
-e1s1t1_avg <- avgExercise_type1[[1]] 
+getSession <- function(session, exercise) {
+  s <- session
+  e <- exercise
+  sesh <- list()
+  for (u in 1:5) {
+    df <- read.table(file=paste('s',s,'/e',e,'/u',u,'/template_session.txt', sep=''), header=TRUE, sep=';') %>%
+      select(-time.index)
+    colnames(df) <- paste(colnames(df), '_u',u,sep='')
+    sesh <- c(sesh, df)
+  }
+  sesh %>% 
+    as.data.frame() %>%
+    mutate(time.index = 1:nrow(df)) %>%
+    relocate(time.index)
+}
 
 compareExercises <- function(avgExercise, exercise) {
   distances <- rep(0,45)
@@ -162,23 +154,31 @@ compareExercises <- function(avgExercise, exercise) {
   mean(distances)
 }
 
-# Compare exercise 1 (e1s1t1) to all other exercises of type 1 from session 1
-for (e in 1:8) {
-  compareExercises(avgExercise_type1[[e]], e1s1t1) %>% print()
+# Get data
+avgEx <- getAllAvgExercises(1)
+s1e1 <- getSession(1, 1) # session 1 exercise 1
+################################################################################
+
+
+
+## Identify when an exercise is being done
+################################################################################
+n_dtw_val <- nrow(s1e1) - nrow(avgEx[[1]])
+dtw_val <- rep(0, n_dtw_val+1)
+for (i in 0:n_dtw_val) {
+  window <- s1e1[avgEx[[1]]$time.index + i,]
+  dtw_val[i+1] <- compareExercises(avgEx[[1]], window)
+  if (i %% 100 == 0) print(paste(round(i/n_dtw_val*100, 2),'% done', sep=''))
 }
 
-# General compare exercise to all other exercises from session 1
-compare_exercise <- 3
-for (e in 1:8) {
-  d <- compareExercises(avgExercise_type3[[e]], 
-                   getExercise(exercise=compare_exercise, 
-                               session=1, 
-                               startTime=tTime$start[1], 
-                               endTime=tTime$end[1]))
-  if (e == compare_exercise) print(paste("Correct match: ", d))
-  else print(d)
-}
 
+s1e1 %>%
+  add_column(dtw_val = c(rep(0, 107),dtw_val,rep(0, 107))) %>%
+  ggplot() +
+  geom_line(aes(x=time.index, y=acc_x_u2)) +
+  geom_line(aes(x=time.index, y=dtw_val))
+
+plot(dtw_val)
 
 
 
