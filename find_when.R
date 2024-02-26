@@ -167,6 +167,7 @@ avgEx2 <- getAllAvgExercises(2)
 avgEx3 <- getAllAvgExercises(3)
 avgEx <- list(avgEx1, avgEx2, avgEx3)
 s1e1 <- getSession(1, 1) # session 1 exercise 1
+s3e4 <- getSession(3, 4) # session 3 exercise 4
 ################################################################################
 
 
@@ -296,29 +297,24 @@ dtw_distances %>%
   geom_line(aes(x=time.index, y=dtw_e6_t3), col='red') +
   geom_line(aes(x=time.index, y=dtw_e7_t3), col='red') +
   geom_line(aes(x=time.index, y=dtw_e8_t3), col='red')  +
-  geom_rect(data=data.frame(start=c(90, 330, 550, 900, 1025, 1160, 1470, 1700, 1920), 
-                            end=c(260, 510, 710, 960, 1100, 1230, 1650, 1880, 2100)),
-            aes(xmin=start, xmax=end, ymin=0, ymax=600),
-            col='transparent', fill='green', alpha=0.3) +
   labs(title = 'All DTW Distances (not summed)')
 
 
 # plot sums of dtw values by exercise
-doing_exercise <- ifelse(dtw_distances$dtw_1 < mean(dtw_distances$dtw_1), 1, 0)
-dtw_distances %>%
+plotting <- dtw_distances %>%
   select(-starts_with('dtw_e')) %>%
+  add_column(comparison = s3e4$acc_x_u2,
+             pred = dtw_pred$less_avg) %>%
   pivot_longer(cols = starts_with('dtw_'),
                names_to = 'exercise',
                names_prefix = 'dtw_', 
-               values_to = 'dtw') %>%
+               values_to = 'dtw') 
+plotting %>%
   ggplot() +
   geom_line(aes(x=time.index, y=dtw, col=exercise)) +
-  geom_rect(data=data.frame(start=c(90, 330, 550, 900, 1025, 1160, 1470, 1700, 1920), 
-                            end=c(260, 510, 710, 960, 1100, 1230, 1650, 1880, 2100)),
-            aes(xmin=start, xmax=end, ymin=25, ymax=1050),
-            col='transparent', fill='green', alpha=0.2) +
-  geom_line(data=s1e1, aes(x=time.index, y=acc_x_u2), col=doing_exercise+1) +
-  labs(title = 'All DTW Distances (summed)')
+  labs(title = 'All DTW Distances (summed)') +
+  geom_line(aes(x=time.index, y=comparison), col=plotting$pred+1) 
+################################################################################
 
 
 ## Create Functions
@@ -387,7 +383,7 @@ get_exercise_pred <- function(dtw_distances) {
     sort(decreasing = F) -> selection
   selection <- selection[1]
   
-  dtw_distances %>%
+  pred <- dtw_distances %>%
     select(time.index, 
            names(selection), 
            starts_with(paste(strtrim(names(selection), 4),
@@ -395,10 +391,29 @@ get_exercise_pred <- function(dtw_distances) {
                              substr(names(selection),start=5,stop=5), 
                              sep=''))) %>%
     mutate(less_avg = ifelse(.[[2]] < selection, 1, 0)) %>%
-    select(less_avg)
+    select(less_avg) 
+  colnames(pred) <- paste('e',substr(names(selection), start=5, stop=5),sep='')
+  pred
 }
 
+plot_dtw_sum <- function(dtw_distances, dtw_pred) {
+  plotting <- dtw_distances %>%
+    select(-starts_with('dtw_e')) %>%
+    add_column(less_avg = dtw_pred[[1]]) %>%
+    pivot_longer(cols = starts_with('dtw_'),
+                 names_to = 'exercise',
+                 names_prefix = 'dtw_', 
+                 values_to = 'dtw') 
+  plotting %>%
+    ggplot() +
+    geom_line(aes(x=time.index, y=dtw, col=exercise)) +
+    geom_line(aes(x=time.index, y=less_avg), col=plotting$less_avg+1) +
+    labs(title = 'All DTW Distances (summed)')
+}
+
+
 # test functions
-dtw_distances <- get_dtw_distances(s1e1, avgEx1, avgEx2, avgEx3)
-get_exercise_pred(dtw_distances) %>% plot()
+dtw_distances <- get_dtw_distances(s3e4, avgEx1, avgEx2, avgEx3)
+dtw_pred <- get_exercise_pred(dtw_distances) 
+plot_dtw_sum(dtw_distances, dtw_pred) 
 
