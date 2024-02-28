@@ -124,17 +124,21 @@ tSesh_all_sensors <- list(tSesh1, tSesh2, tSesh3, tSesh4, tSesh5) %>%
 
 tTime <- read.table(file=paste('s',s,'/e',e,'/template_times.txt', sep=''), header=TRUE, sep=';')
 
+colors <- c("Sensor 1" = "orange", "Sensor 2" = 'dodgerblue',
+            "Sensor 3" = 'red2', "Sensor 4" = "green2",
+            'Sensor 5' = 'black')
 tSesh_all_sensors %>%
   ggplot() +
-  geom_line(aes(x=time.index, y=acc1), col='orange') +
-  geom_line(aes(x=time.index, y=acc2), col='dodgerblue') +
-  geom_line(aes(x=time.index, y=acc3), col='red2') +
-  geom_line(aes(x=time.index, y=acc4), col='green2') +
-  geom_line(aes(x=time.index, y=acc5)) +
+  geom_line(aes(x=time.index, y=acc1, color='Sensor 1')) +
+  geom_line(aes(x=time.index, y=acc2, color='Sensor 2')) +
+  geom_line(aes(x=time.index, y=acc3, color='Sensor 3')) +
+  geom_line(aes(x=time.index, y=acc4, color='Sensor 4')) +
+  geom_line(aes(x=time.index, y=acc5, color='Sensor 5')) +
   facet_grid(coord~., scales='free') +
   labs(title=paste('Subject ',s,', Exercise ',e,', Accelerometer', sep=''),
        x='Time Index',
-       y='Acceleration')
+       y='Acceleration',
+       color='Sensor')
 
 tSesh_all_sensors %>%
   ggplot() +
