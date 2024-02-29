@@ -7,7 +7,6 @@ setwd('C:/Users/lchco/OneDrive/Documents/School/CSU/Spring_2024/STAT472/physical
 library(dtw)
 library(tidyverse)
 library(ggplot2)
-library(yardstick)
 
 # Gets an entire session from the data 
 getSession <- function(session, exercise, test=F) {
