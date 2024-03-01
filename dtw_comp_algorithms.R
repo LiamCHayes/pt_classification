@@ -104,12 +104,13 @@ getAllAvgExercises <- function(exerciseType) {
 }
 
 # Extract an exercise to compare to the averages
-getExercise <- function(exercise, session, startTime, endTime) {
+getExercise <- function(exercise, session, startTime, endTime, test=F) {
+  t <- ifelse(test == T, 'test', 'template_session')
   s <- session
   e <- exercise
   sensors <- list()
   for (u in 1:5) {
-    tSesh <- read.table(file=paste('s',s,'/e',e,'/u',u,'/template_session.txt', sep=''), header=TRUE, sep=';')
+    tSesh <- read.table(file=paste('s',s,'/e',e,'/u',u,'/',t,'.txt', sep=''), header=TRUE, sep=';')
     index <- tSesh$time.index
     tSesh <- tSesh %>%
       select(-time.index)
@@ -137,7 +138,7 @@ compareExercises <- function(avgExercise, exercise) {
 classifyExercise <- function(subject_exercise, avg_exercise) {
   distances <- rep(0, 8)
   for (e in 1:8) {
-    if (nrow(subject_exercise) < nrow(avg_exercise[[e]])/2) {
+    while (nrow(subject_exercise) < nrow(avg_exercise[[e]])/2) {
       subject_exercise <- lapply(subject_exercise, rep, each=2) %>%
         as.data.frame()
     }
@@ -188,18 +189,28 @@ classifyExercise_subset <- function(subject_exercise, avg_exercise, nSignals) {
 # Get the average signals for all exercises
 avgExercise_type1 <- getAllAvgExercises(1)
 
-# Get exercise we want to classify
-e <- 4 # exercise
+
+# Get test set exercise we want to classify
+e <- 1 # exercise
 s <- 1 # session
-tTime <- read.table(file=paste('s',s,'/e',e,'/template_times.txt', sep=''), 
-                    header=TRUE, sep=';')
+tTime <- read.csv(file=paste('s',s,'/e',e,'/test_times.csv', sep=''), 
+                    header=TRUE)
 subject_exercise <- getExercise(exercise=e,
                                 session=s,
                                 startTime=tTime$start[1],
-                                endTime=tTime$end[1])
+                                endTime=tTime$end[1], 
+                                test=T)
 
-# Classify exercise
-classifyExercise(subject_exercise, avgExercise_type1)
+# Classify exercise on test set
+for (f in 1:30) {
+  subject_exercise <- getExercise(exercise=e,
+                                  session=s,
+                                  startTime=tTime$start[f],
+                                  endTime=tTime$end[f], 
+                                  test=T)
+  paste('Exercise ',e,' type ',tTime$execution.type[f],' classification: ', classifyExercise(subject_exercise, avgExercise_type1)) %>% print()
+}
+
 
 # Get training set error
 truth <- rep(0, 8*5)
@@ -231,8 +242,8 @@ print(paste(sum(truth == pred) / length(truth) *100,'% accuracy',sep=''))
 avgExercise_type1 <- getAllAvgExercises(1)
 
 # Get exercise we want to classify
-e <- 2 # exercise
-s <- 1 # session
+e <- 1 # exercise
+s <- 3 # session
 tTime <- read.table(file=paste('s',s,'/e',e,'/template_times.txt', sep=''), 
                     header=TRUE, sep=';')
 subject_exercise <- getExercise(exercise=e,
