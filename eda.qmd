@@ -134,7 +134,7 @@ tSesh_all_sensors %>%
   geom_line(aes(x=time.index, y=acc3, color='Sensor 3')) +
   geom_line(aes(x=time.index, y=acc4, color='Sensor 4')) +
   geom_line(aes(x=time.index, y=acc5, color='Sensor 5')) +
-  facet_grid(coord~., scales='free') +
+  facet_grid(coord~.) +
   labs(title=paste('Subject ',s,', Exercise ',e,', Accelerometer', sep=''),
        x='Time Index',
        y='Acceleration',
