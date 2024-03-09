@@ -32,7 +32,7 @@ getSession <- function(session, exercise, test=F) {
 ################################################################################
 # Get session
 s <- 1
-e <- 2
+e <- 4
 df <- getSession(s, e, T)
 
 # Find max variance index
@@ -46,7 +46,7 @@ df %>%
   ggplot() +
   geom_line(aes(x=time.index, y=sig)) 
   xlim() +
-  geom_vline(xintercept = 5880, col='blue')
+  geom_vline(xintercept = 5920, col='blue')
 
 # create test_times.txt that corresponds to test session
 start <- c()
