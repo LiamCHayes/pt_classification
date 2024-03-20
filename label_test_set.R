@@ -41,19 +41,23 @@ maxVarIdx <- sapply(df, var)[2:46] %>%
 maxVarIdx <- maxVarIdx[1]
 
 # Plot max variance index
-xmin <- 0
+xmin <- 4000
 xmax <- 6000
 df %>%
   select(1, sig = maxVarIdx) %>%
   filter(time.index > xmin & time.index < xmax) %>%
   ggplot() +
   geom_line(aes(x=time.index, y=sig)) +
-  geom_vline(xintercept = 5840, col='blue') +
+  geom_vline(xintercept = 5865, col='blue') +
   scale_x_continuous(breaks=seq(xmin, xmax, by=100)) 
 
 # create test_times.txt that corresponds to test session
-start <- c()
-end <- c()
+start <- c(40, 260, 470, 720, 950, 1210, 1425, 1670, 1900, 2140, 
+           2530, 2625, 2710, 2800, 2895, 3000, 3120, 3230, 3340, 3460, 
+           4040, 4220, 4410, 4585, 4755, 4940, 5125, 5305, 5510, 5695)
+end <- c(250, 440, 685, 920, 1190, 1400, 1645, 1885, 2100, 2350, 
+         2610, 2700, 2800, 2890, 2990, 3100, 3210, 3320, 3435, 3540, 
+         4200, 4380, 4570, 4740, 4920, 5105, 5290, 5480, 5665, 5865)
 
 repNum <- seq(1,30)
 type <- rep(c(1,2,3), each=10)
