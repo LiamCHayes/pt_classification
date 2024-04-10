@@ -252,6 +252,8 @@ getTestSetPreds <- function() {
 
 results <- getTestSetPreds()
 
+write.csv(results, file="model_output/classify_exercise.csv")
+
 r100 <- results %>%
   filter(window==10)
 
@@ -283,7 +285,7 @@ for (e in 1:8) { # Takes about 3 1/3 hours
   print(paste("Exercise",e))
   
   # Get data
-  sesh <- getSession(e, 1)
+  sesh <- getSession(1, e)
   times <- read.csv(paste("s1/e",e,"/test_times.csv",sep="")) %>%
     filter(rep.number <= 10)
   sesh <- sesh %>% filter(time.index < times$end[10] + 100)
@@ -326,10 +328,61 @@ for (e in 1:8) { # Takes about 3 1/3 hours
                   truth.start = times$start,
                   truth.end = times$end)
   preds <- rbind(preds, r)
-  truth <- rbind(truth, r)
+  truth <- rbind(truth, t)
 }
 preds <- preds %>% filter(pred.exercise != 0)
 truth <- truth %>% filter(truth.exercise != 0)
+
+write.csv(preds, file="model_output/interval_pred_find_when.csv")
+write.csv(truth, file="model_output/interval_truth_find_when.csv")
+
+preds <- read.csv("model_output/interval_pred_find_when.csv") %>%
+  select(-X)
+truth <- read.csv("model_output/interval_truth_find_when.csv") %>%
+  select(-X)
+
+# Plot results
+e <- 3
+sesh <- getSession(1, e)
+times <- read.csv(paste("s1/e",e,"/test_times.csv",sep="")) %>%
+  filter(rep.number <= 10)
+sesh <- sesh %>% filter(time.index < times$end[10] + 100)
+ 
+maxVarIdx <- sapply(sesh[,2:46], var) %>% which.max() +1
+
+preds_ex <- preds %>%
+  filter(pred.exercise==e)
+
+ggplot() +
+  geom_line(aes(x=sesh$time.index, y=sesh[,maxVarIdx])) +
+  annotate('rect', fill='green', alpha=0.3, xmin=times$start, xmax=times$end, ymin=-Inf, ymax=Inf) +
+  labs(title=paste("True Exercise Times, Exercise",e), 
+       x="Time Index",
+       y="Highest Variance Signal")
+
+ggplot() +
+  geom_line(aes(x=sesh$time.index, y=sesh[,maxVarIdx])) +
+  annotate('rect', fill='blue', alpha=0.3, xmin=preds_ex$pred.start, xmax=preds_ex$pred.end, ymin=-Inf, ymax=Inf) +
+  geom_vline(xintercept = preds_ex$pred.center, col="red", alpha=0.5) +
+  labs(title=paste("Predicted Exercise Times, Exercise",e), 
+       x="Time Index",
+       y="Highest Variance Signal")
+
+# Calculate error **In progress**
+num_correct <- 0
+num_incorrect <- 0
+for (i in 1:nrow(preds)) {
+  pred <- preds[i,]
+  comp <- truth %>% filter(truth.exercise==pred$pred.exercise)
+  
+  ex_idx <- max(which(pred$pred.center > comp$truth.start))
+  if (pred$pred.center < comp[ex_idx,]$truth.end) {
+    num_correct <- num_correct + 1
+    comp <- comp[-ex_idx,]
+  } else num_incorrect <- num_incorrect + 1
+}
+# num_correct should be <= nrow(truth)
+
 
 ################################################################################
 
@@ -342,11 +395,11 @@ preds <- data.frame(pred.exercise = c(0),
 truth <- data.frame(truth.exercise = c(0),
                     truth.start = c(0),
                     truth.end = c(0))
-for (e in 1:8) { # Takes about 3 1/3 hours
+for (e in 1:8) {
   print(paste("Exercise",e))
   
   # Get data
-  sesh <- getSession(e, 1)
+  sesh <- getSession(1, e)
   times <- read.csv(paste("s1/e",e,"/test_times.csv",sep=""))
   
   # get dtw distances for a sliding window for all exercises
@@ -381,10 +434,49 @@ for (e in 1:8) { # Takes about 3 1/3 hours
                   truth.start = times$start,
                   truth.end = times$end)
   preds <- rbind(preds, r)
-  truth <- rbind(truth, r)
+  truth <- rbind(truth, t)
 }
 preds <- preds %>% filter(pred.exercise != 0)
 truth <- truth %>% filter(truth.exercise != 0)
+
+write.csv(preds, file="model_output/center_pred_find_when.csv")
+write.csv(truth, file="model_output/center_truth_find_when.csv")
+
+preds <- read.csv("model_output/center_pred_find_when.csv") %>%
+  select(-X)
+truth <- read.csv("model_output/center_truth_find_when.csv") %>%
+  select(-X) %>%
+  add_column(truth.type = rep(c(rep(1,10), rep(2,10), rep(3,10)),8))
+
+# Calculate error 
+num_correct <- 0
+num_incorrect <- 0
+type_correct <- c()
+num_missed <- 0
+for (e in 1:8) {
+  pred <- preds %>% filter(pred.exercise==e)
+  t <- truth %>% filter(truth.exercise==e)
+  for (i in 1:nrow(pred)) {
+    p <- pred[i,]
+    
+    ex_idx <- max(which(p$pred.center > t$truth.start))
+    type <- t[ex_idx,]$truth.type
+    print(type)
+    if (p$pred.center < t[ex_idx,]$truth.end & ex_idx != -Inf) {
+      num_correct <- num_correct + 1
+      type_correct <- c(type_correct, type)
+      t <- t[-ex_idx,]
+    } else {
+      num_incorrect <- num_incorrect + 1
+    }
+  }
+  num_missed <- num_missed + nrow(t)
+}
+
+num_correct / (num_incorrect + num_correct) # 75.63% accuracy overall
+sum(type_correct == 1) / 80 # 98.75% accuracy for correctly executed exercises
+sum(type_correct == 2) / 80 # 81.25% accuracy for exercises executed too fast
+sum(type_correct == 3) / 80 # 45% accuracy for low amplitude exercise
 
 ################################################################################
 
@@ -422,6 +514,8 @@ results <- data.frame(pred.exercise = pred.exercise,
                       truth.exercise_type = truth.exercise_type) %>%
   add_column(correct = pred.exercise_type == truth.exercise_type)
 
+write.csv(results, file="model_output/classify_exercise_type.csv")
+
 sum(results$pred.exercise_type == results$truth.exercise_type) / nrow(results) * 100
 # Bad algorithm, 5.42% accuracy
 
@@ -439,8 +533,5 @@ results %>%
 ggsave("plots/exercise_type_confusion_matrix.png", height=7, width=14)
 
 ################################################################################
-
-
-
 
 
