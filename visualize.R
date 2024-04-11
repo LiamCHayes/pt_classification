@@ -229,3 +229,57 @@ sesh %>%
         title = element_text(size=15))
 ggsave("plots/s1e1_test_set_dtw_distances.png", width = 14, height = 7)
 
+
+
+
+
+
+
+
+################################################################################
+## See a whole session
+
+df <- getSession(1,1,test=FALSE) %>%
+  pivot_longer(!time.index, 
+               names_to = c("type", "direction", "sensor"),
+               names_pattern = "(.*)_(.*)_u(.*)")
+df$type[which(df$type == "acc")] <- "Accelerometer"
+df$type[which(df$type == "gyr")] <- "Gyroscope"
+df$type[which(df$type == "mag")] <- "Magnemometer"
+
+a <-  df %>%
+  filter(type == "Accelerometer") %>%
+  ggplot() +
+  geom_line(aes(x=time.index, y=value, col=sensor)) +
+  facet_grid(direction ~ .) +
+  labs(title = "Accelerometer",
+       y = "Value",
+       x = "Time Index",
+       col = "Sensor") +
+  theme(legend.position = "none")
+
+g <- df %>%
+  filter(type == "Gyroscope") %>%
+  ggplot() +
+  geom_line(aes(x=time.index, y=value, col=sensor)) +
+  facet_grid(direction ~ .) +
+  labs(title = "Gyroscope",
+       y = "",
+       x = "Time Index",
+       col = "Sensor") +
+  theme(legend.position = "none")
+
+m <- df %>%
+  filter(type == "Magnemometer") %>%
+  ggplot() +
+  geom_line(aes(x=time.index, y=value, col=sensor)) +
+  facet_grid(direction ~ .) +
+  labs(title = "Magnemometer",
+       y = "",
+       x = "Time Index",
+       col = "Sensor")
+
+
+a + g + m + plot_layout(widths = c(10,10,10))
+ggsave("plots/e1_s1_all_signals.png", width=14, height=7)
+
