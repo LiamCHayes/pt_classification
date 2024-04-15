@@ -16,6 +16,8 @@ It is clear to see that the standard practice does not ensure maximum utility fr
 
 We have three primary objectives. First, we want to be able to correctly identify the exercise a patient is doing. If we have sensors on a new subject, can we use data from previous subjects to determine what exercise the new subject is doing? Second, can we determine the quality of a rep? Exercises can be incorrectly performed by being too fast or with a limited range of motion, so we want to be able to detect these errors as well. Finally, do we need all of our data to be able to complete the first two objectives? Reducing the amount of sensors a patient has to wear improves ease of use as well as reduces the complexity of our algorithms.
 
+Paragraph 4 test 
+
 # Data
 
 Our data was collected from the UC Irvine Machine Learning Repository with accompanying paper "Automated Evaluation of Physical Therapy Exercises Using Multi-template Dynamic Time Warping on Wearable Sensor Signals" \textcolor{red}{citation here}.
