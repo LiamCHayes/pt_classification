@@ -28,7 +28,7 @@ knitr::include_graphics("plots/e1_s1_all_signals.png")
 
 There are two data sets for each combination of subject, exercise, and sensor. A template session which contains 3 executions of each 3 execution types (correct, too fast, and low amplitude), and a test session which contains 10 executions of each 3 execution types.
 
-## Exercises in the Data 
+## Exercises in the Data
 
 As mentioned previously, we have 8 different exercises in our data. The four lower body exercises are exercises 1, 3, 4, and 5. The four upper body exercises are 2, 6, 7, and 8. Diagrams of these can be seen in figure 2. There are also different sensor configurations for lower and upper body exercises shown in figure 3.
 
@@ -40,7 +40,7 @@ knitr::include_graphics("plots/exercise_diagrams.png")
 knitr::include_graphics("plots/sensor_placement.png")
 ```
 
-#  Methods
+# Methods
 
 # Results
 
