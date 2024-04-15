@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 # Abstract
 
-Physical therapy is an effective and often necessary part of rehabilitation for patients recovering from surgery or injury. As a result of limited resources, many patients must perform these exercises by themselves or at home with no supervision which can lead to incorrectly performed exercises and suboptimal rehabilitation. In this paper, we analyze motion sensor data from 5 participants performing 8 exercises in 3 different ways (correctly performed, too fast, and low amplitude). Our goal is to use data from the wearable motion sensors to provide feedback that can help patients consistently perform these exercises correctly. We explore methods using Dynamic Time Warping and Time Series Analysis to generate this feedback. We found that Dynamic Time Warping methods can classify individual exercises with 100% accuracy, identify when and how many reps of an exercise is performed in a session with 75.63% accuracy, and very poorly identify the quality of each rep with 5.42% accuracy. With methods that use Time Series Analysis, we found ** Results Here **. These methods give a promising start to a way to provide feedback on independently performed physical therapy exercises using wearable motion sensors but needs some more refinement to give consistent and useful feedback to patients.
+Physical therapy is an effective and often necessary part of rehabilitation for patients recovering from surgery or injury. As a result of limited resources, many patients must perform these exercises by themselves or at home with no supervision which can lead to incorrectly performed exercises and suboptimal rehabilitation. In this paper, we analyze motion sensor data from 5 participants performing 8 exercises in 3 different ways (correctly performed, too fast, and low amplitude). Our goal is to use data from the wearable motion sensors to provide feedback that can help patients consistently perform these exercises correctly. We explore methods using Dynamic Time Warping and Time Series Analysis to generate this feedback. We found that Dynamic Time Warping methods can classify individual exercises with 100% accuracy, identify when and how many reps of an exercise is performed in a session with 75.63% accuracy, and very poorly identify the quality of each rep with 5.42% accuracy. When using detrending and sin regression in combination with random forests, our best model is able to classify exercises with 80% accuracy. These methods give a promising start to a way to provide feedback on independently performed physical therapy exercises using wearable motion sensors but needs some more refinement to give consistent and useful feedback to patients.
 
 # Introduction
 
@@ -24,19 +24,19 @@ We have four primary objectives. First, we want to be able to correctly identify
 
 # Data
 
-The data was collected from the UC Irvine Machine Learning Repository, with accompanying paper "Automated Evaluation of Physical Therapy Exercises Using Multi-template Dynamic Time Warping on Wearable Sensor Signals" \textcolor{red}{citation here}.
+Our data was collected from the UC Irvine Machine Learning Repository with accompanying paper "Automated Evaluation of Physical Therapy Exercises Using Multi-template Dynamic Time Warping on Wearable Sensor Signals" \textcolor{red}{citation here}.
 
-The data set contains 5 sessions. For each session, a subject performs 8 different exercises while wearing 5 motion sensors on different parts of their body. Each sensor takes 9 measurements at 25 Hz while the subject is performing the exercise. In all directions ($x$, $y$, and $z$) the sensor calculates the acceleration ($\frac{\text{meters}}{\text{second}^2}$), angular rate ($\frac{\text{radians}}{\text{second}}$), and magnetic field (relative). This means that with 5 sensors and 9 measurements per sensor, there are 45 continuous measurements that describe a session. Figure 1 shows what these 45 measurements look like for the first exercise in the first session in our data set.
+The data set contains 5 sessions. Each session, a subject performs 8 different exercises while wearing 5 motion sensors on different parts of their body. Each sensor takes 9 measurements at 25 Hz while the subject is performing the exercise. In all directions ($x$, $y$, and $z$) the sensor calculates the acceleration ($\frac{\text{meters}}{\text{second}^2}$), angular rate ($\frac{\text{radians}}{\text{second}}$), and magnetic field (relative). This means that with 5 sensors and 9 measurements per sensor, there are 45 continuous measurements that describe a session. Figure 1 shows what these 45 measurements look like for the first exercise in the first session in our data set.
 
 ```{r fig.cap="Example of data for a signle session", fig.align='center'}
 knitr::include_graphics("plots/e1_s1_all_signals.png")
 ```
 
-There are two data sets for each combination of subject, exercise, and sensor: A template session which contains 3 executions of each 3 execution types (correct, too fast, and low amplitude), and a test session which contains 10 executions of each 3 execution types.
+There are two data sets for each combination of subject, exercise, and sensor. A template session which contains 3 executions of each 3 execution types (correct, too fast, and low amplitude), and a test session which contains 10 executions of each 3 execution types.
 
 ## Exercises in the Data
 
-As mentioned previously, we have 8 different exercises in our data. The four lower body exercises are exercises 1, 3, 4, and 5. The four upper body exercises are 2, 6, 7, and 8. Diagrams of these can be seen in figure 2. There are also different sensor configurations for lower and upper body exercises shown in figure 3. Sensors are placed in different areas for lower body and upper body exercises with the exception of sensor 5, which is always on the upper middle area of the subject's back.
+As mentioned previously, we have 8 different exercises in our data. The four lower body exercises are exercises 1, 3, 4, and 5. The four upper body exercises are 2, 6, 7, and 8. Diagrams of these can be seen in figure 2. There are also different sensor configurations for lower and upper body exercises shown in figure 3.
 
 ```{r fig.cap="Diagram of the 8 exercises", out.width="50%", fig.align='center'}
 knitr::include_graphics("plots/exercise_diagrams.png")
