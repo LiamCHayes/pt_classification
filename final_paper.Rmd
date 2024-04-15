@@ -48,6 +48,10 @@ knitr::include_graphics("plots/sensor_placement.png")
 
 # Methods
 
+## Dynamic Time Warping 
+
+Dynamic time warping (DTW) is an algorithm that "stretches and squeezes" time to align and compare signals.
+
 # Results
 
 # Limitations
