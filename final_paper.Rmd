@@ -8,6 +8,10 @@ output: pdf_document
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
+# Abstract
+
+Physical therapy is an effective and often necessary part of rehabilitation for patients recovering from surgery or injury. As a result of limited resources, many patients must perform these exercises by themselves or at home with no supervision which can lead to incorrectly performed exercises and suboptimal rehabilitation. In this paper, we analyze motion sensor data from 5 participants performing 8 exercises in 3 different ways (correctly performed, too fast, and low amplitude). Our goal is to use data from the wearable motion sensors to provide feedback that can help patients consistently perform these exercises correctly. We explore methods using Dynamic Time Warping and Time Series Analysis to generate this feedback. We found that Dynamic Time Warping methods can classify individual exercises with 100% accuracy, identify when and how many reps of an exercise is performed in a session with 75.63% accuracy, and very poorly identify the quality of each rep with 5.42% accuracy. With methods that use Time Series Analysis, we found ** Results Here **. These methods give a promising start to a way to provide feedback on independently performed physical therapy exercises using wearable motion sensors but needs some more refinement to give consistent and useful feedback to patients.
+
 # Introduction
 
 When providing physical therapy, most physical therapists rely on their professional oversight and patient discretion to ensure proper execution of an exercise. After a few initial sessions with the patient, it is usually prescribed to continue these exercises at home. Although this has proven effective, it can result in a sub-optimal success rate due to time constraints of the therapist and lack of feedback for patients practicing at home.
