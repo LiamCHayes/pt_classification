@@ -7,6 +7,7 @@ library(multiDSignals)
 library(tidyverse)
 library(ggplot2)
 library(dtw)
+library(patchwork)
 
 
 ## Functions
@@ -281,5 +282,5 @@ m <- df %>%
 
 
 a + g + m + plot_layout(widths = c(10,10,10))
-ggsave("plots/e1_s1_all_signals.png", width=14, height=7)
+ggsave("plots/e1_s1_all_signals_taller.png", width=14, height=10)
 
