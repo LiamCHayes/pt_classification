@@ -48,9 +48,56 @@ knitr::include_graphics("plots/sensor_placement.png")
 
 # Methods
 
-## Dynamic Time Warping
+## Method 2: Dynamic Time Warping
 
-Dynamic time warping (DTW) is an algorithm that "stretches and squeezes" time to align and compare signals.
+Dynamic time warping (DTW) is an algorithm that "stretches and squeezes" time to align and compare signals. There are many versions of this algorithm, but the type we use is already implemented in the DTW package in R (Giorgino, 2009). Our chosen step pattern is typeIIIc as described by Myers (1980). A visualization of how DTW aligns two signals can be found in figure \textcolor{red}{fig number}.
+
+```{r fig.cap="DTW aligning two signals from different sessions"}
+knitr::include_graphics("plots/dtw.png")
+```
+
+### Classifying With DTW
+
+In order to classify an exercise $e$, we go through the following steps:
+
+1.  Find the average signal for each 8 exercise types.
+2.  Select the $n$ highest variance signals to compare.
+3.  Compare the $n$ highest variance signals from $e$ to the corresponding signals from each 8 average exercises using DTW and sum up the $n$ distance measures.
+4.  Classify as the exercise with the lowest total distance measure.
+
+#### Step 1: Finding the Average Signal For Each Exercise
+
+The purpose of finding the average signal for each exercise is to have a benchmark to compare against. Averaging reduces variance when more data points are averaged over, so by averaging we can remove variance and get closer to the core of what makes the exercise this particular exercise.
+
+As a quick recap: we have 45 continuous measurements that describe an exercise. We want to keep this shape when we average because we want to be able to compare individual exercises against the average. So, we will go signal by signal and find the average for each of the 45 continuous signals.
+
+Let's look at the process for finding the average of one signal. Once we understand that, we can repeat for all other signals of the exercise. In figure \textcolor{red}{fig number} we have 5 original signals, each from different sessions and corresponding to exercise 1, sensor 2, acceleration in the x direction. We want to find the average of these 5 signals.
+
+```{r fig.cap="Original unaligned signals"}
+knitr::include_graphics("plots/unaligned.png")
+```
+
+The first step is to align these signals. The DTW R package returns two vectors that can be used to align two signals $s_1$ and $s_2$. Let's suppose $s_1$ is the longer signal and therefore the one that will remain unchaged. The vector that corresponds to $s_1$, $v_1$, contains indices of the vector that is remaining unchanged. $v_1$ just contains the indexes of $s_1$. The second vector $v_2$ corresponds to $s_2$ and is the length of the first vector, but might repeat or skip numbers to match a point on $s_2$ to its closest match on $s_1$. For example, if the fifth index of $s_2$ matches best with the seventh index of $s_1$, 5 will be in the seventh spot of $v_2$. Here's a simple example where the best alignment is stretching the first part of $s_2$:
+
+$$
+v_1 = (1,2,3,4,5,6,7,8,9,10,...)
+$$
+
+$$
+v_2 = (1,2,2,3,4,4,5,6,7,7,...)
+$$
+
+With these vectors we align the signals one by one, aligning the shorter signal to the longest signal. After this is done, we get the signals in figure \textcolor{red}{fig num}.
+
+```{r fig.cap="Aligned signals"}
+knitr::include_graphics("plots/aligned.png")
+```
+
+After this is done, we can take the average at each index and we have our average signal (figure \textcolor{red}{fig num}). Repeat for each 45 signals that describe the exercise and we have a set of signals that describe the average exercise.
+
+```{r fig.cap="Average signal"}
+knitr::include_graphics("plots/average.png")
+```
 
 # Results
 
