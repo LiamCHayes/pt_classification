@@ -93,11 +93,17 @@ With these vectors we align the signals one by one, aligning the shorter signal 
 knitr::include_graphics("plots/aligned.png")
 ```
 
-After this is done, we can take the average at each index and we have our average signal (figure \textcolor{red}{fig num}). Repeat for each 45 signals that describe the exercise and we have a set of signals that describe the average exercise.
+Finally, we can take the average at each index and we have our average signal (figure \textcolor{red}{fig num}). Repeat for each 45 signals that describe the exercise and we have a set of signals that describe the average exercise.
 
 ```{r fig.cap="Average signal"}
 knitr::include_graphics("plots/average.png")
 ```
+
+#### Step 2: Select the n Highest Variance Signals to Compare
+
+Comparing 45 signals is a lot of computation. However, looking back at figure 1, many of the signals don't contain a lot of information. Some signals are flat, noisy, or independent of the execution of the rep. Our theory is that the signals with the highest variance tend to contain more information about the rep. Using LOOCV, we tested $n=(1,2,3,...,45)$ and chose the model that minimized n while maintaining accuracy. While on the topic of tuning parameters, it's worth mentioning we also tuned a parameter $w$ that represents a smoothing window. This is a just simple moving average with a window of $w$ that we tuned alongside $n$.
+
+#### Step 4: Compare the n Highest Variance Signals
 
 # Results
 
