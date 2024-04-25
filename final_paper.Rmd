@@ -112,3 +112,9 @@ Comparing 45 signals is a lot of computation. However, looking back at figure 1,
 # Improvements
 
 # References
+
+Yurtman, A. Billur, B (2014). “Automated Evaluation of Physical Therapy Exercises Using Multi-Template Dynamic Time Warping on Wearable Sensor Signals” Elsevier Health
+
+Van Boxtel, G. (2021). “Signal Processing in R”
+
+Giorgino, T. (2009). “Computing and Visualizing Dynamic Time Warping Alignments in R: The dtw Package” Journal of Statistical Software
