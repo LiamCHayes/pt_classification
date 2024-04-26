@@ -103,13 +103,95 @@ knitr::include_graphics("plots/average.png")
 
 Comparing 45 signals is a lot of computation. However, looking back at figure 1, many of the signals don't contain a lot of information. Some signals are flat, noisy, or independent of the execution of the rep. Our theory is that the signals with the highest variance tend to contain more information about the rep. Using LOOCV, we tested $n=(1,2,3,...,45)$ and chose the model that minimized n while maintaining accuracy. While on the topic of tuning parameters, it's worth mentioning we also tuned a parameter $w$ that represents a smoothing window. This is a just simple moving average with a window of $w$ that we tuned alongside $n$.
 
-#### Step 4: Compare the n Highest Variance Signals
+#### Step 3: Compare the n Highest Variance Signals
+
+Once we have $n$, we will select the $n$ highest variance signals from the exercise we are trying to classify. This is done by computing the variance for each of the 45 signals and ordering them from greatest to least variance. Select the first $n$ of these and then compare to the corresponding signals in the average exercises.
+
+\newpage
+
+#### Step 4: Classify 
+
+After we compare the $n$ signals, we end up with $n$ distance measures for each average exercise. Our distance measure will be as follows:
+
+$$
+D_e = \sum_{i=1}^n d_{ei}
+$$
+
+$$
+\text{Where } e \text{ is the exercise number and } 
+$$
+$$ d_{ei} \text{ is the distance measure of exercise } e \text{ from the } i^{th} \text{ highest variance signal}
+$$
+
+Our classification will be $e$ such that $D_e = inf\{D_j\}$ for $j \in 1:8$
+
+### Identifying Reps with DTW
+
+When we have a session with multiple reps being performed, it can be helpful to be able to identify reps and know when they are being done. This can help with rep and set counting to asses the effectiveness of a session. Figure \textcolor{red}{fig num} is an example session with 10 reps, highlighted in green.
+
+```{r fig.cap="Example session with 10 reps"}
+knitr::include_graphics("plots/s1e1_test_set_highlighted.png")
+```
+
+In order to find when an exercise is happening, we will use the average exercises again. For each average exercise, we will:
+
+1.  Compare the average exercise against a sliding window of the same size across the session.
+2.  Store the distance measure for each window in a vector.
+
+Once we have the 8 distance measure vectors, we will:
+
+1.  Select the vector with the lowest mean.
+2.  Find the local minima of that vector.
+
+This algorithm is operating under a key assumption. We are assuming that the subject is only performing one exercise during the whole session. If they are not, we would have to adjust to segment the distance vectors and choose the segments with the lowest mean.
+
+Going back to our example session, after we compare our average exercises against the sliding windows, we get 8 distance vectors corresponding to each exercise in our data (figure \textcolor{red}{fig num}). This example is from session 1 exercise 1, so it is fitting that the distance vector with the lowest mean corresponds to exercise 1. You'll also see that the local minima of this vector is right in the middle of the reps (figure \textcolor{red}{fig num}). We can also adjust the sensitivity of the identifying the local minima so we don't overestimate the number of reps.
+
+```{r fig.cap="Distance vectors"}
+knitr::include_graphics("plots/s1e1_dtw_distances.png")
+```
+
+```{r fig.cap="Distance vector and session reps in the same graph"}
+knitr::include_graphics("plots/s1e1_test_set_dtw_distances.png")
+```
 
 # Results
 
-# Limitations
+## Method 2: Dynamic Time Warping
 
-# Improvements
+### Classification
+
+With classification, we had 2 tuning parameters. A smoothing window ($w$) and the number of signals to compare ($n$). Using LOOCV, we tried to minimize $n$ while maintaining accuracy. We found that $w=10$ and $n=28$ does this best.
+
+In terms of testing, we trained on sessions 2-5 and tested on session 1. With $w=10$ and $n=28$, we got 100% accuracy on our test set. This includes different execution types as well, i.e. too fast and low amplitude reps.
+
+### Identifying Reps
+
+Testing for identifying reps is a little more complicated. We used the final classification model to use on the sliding window and likewise trained on sessions 2-5 and tested on session 1. Once we found our local minima, the criteria we used to test is as follows.
+
+If the local minima is:
+
+1.  Within the range of when the exercise is happening, classify as correct. 
+
+2.  Outside of the range of when the exercise is happening, classify as incorrect.
+
+3.  Within the range of an exercise that already has a local minima assigned to it, classify as incorrect.
+
+With this criteria, we got 4 accuracy measures:
+
+1.  75.63% accuracy overall.
+
+2.  98.75% accuracy on correctly performed exercises.
+
+3.  81.25% accuracy on exercises performed too quickly.
+
+4.  45% accuracy on low amplitude exercises.
+
+# Conclusions, Limitations, and Improvements
+
+While we are able to classify exercises based on motions sensors with very good accuracy, there are a few limitations that must be addressed before this can be used in a real physical therapy setting. In order to provide quality feedback to a patient, our algorithms should be able to give results in a timely manner. The DTW methods are quite slow, so this could be optimized further.
+
+Another improvement that we were not able to complete is identifying the quality of a rep. If a patient does a rep too fast, it would be helpful to tell them to slow down. Providing feedback on common execution errors would make this much more worth the effort of putting on sensors before every physical therapy session.
 
 # References
 
