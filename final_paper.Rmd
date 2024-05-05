@@ -48,6 +48,12 @@ knitr::include_graphics("plots/sensor_placement.png")
 
 # Methods
 
+## Method 1: Machine Learning Methods with Regression Parameters
+
+```{r fig.cap=""}
+knitr::include_graphics("Plot1.png")
+```
+
 ## Method 2: Dynamic Time Warping
 
 Dynamic time warping (DTW) is an algorithm that "stretches and squeezes" time to align and compare signals. There are many versions of this algorithm, but the type we use is already implemented in the DTW package in R (Giorgino, 2009). Our chosen step pattern is typeIIIc as described by Myers (1980). A visualization of how DTW aligns two signals can be found in figure \textcolor{red}{fig number}.
