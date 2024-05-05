@@ -195,7 +195,13 @@ Another improvement that we were not able to complete is identifying the quality
 
 # References
 
-Yurtman, A. Billur, B (2014). “Automated Evaluation of Physical Therapy Exercises Using Multi-Template Dynamic Time Warping on Wearable Sensor Signals” Elsevier Health
+A. Yurtman and B. Barshan, “Automated evaluation of physical therapy exercises using multi-template dynamic time warping on wearable sensor signals,” Computer Methods and Programs in Biomedicine, 117(2):189–207, November 2014 (DOI: 10.1016/j.cmpb.2014.07.003).
+
+A. Yurtman and B. Barshan, “Detection and evaluation of physical therapy exercises by dynamic time warping using wearable motion sensor units,” Information Sciences and Systems 2013 - Proceedings of the 28th International Symposium on Computer and Information Sciences, 28-29 October 2013, Paris, France, Lecture Notes in Electrical Engineering, vol.264, E. Gelenbe and R. Lent (eds.), Springer International Publishing, Switzerland, pp. 305–314, 2013.
+
+A. Yurtman and B. Barshan, “Detection and evaluation of physical therapy exercises from wearable motion sensor signals by dynamic time warping (Fizik tedavi egzersizlerinin giyilebilir hareket algılayıcıları işaretlerinden dinamik zaman bükmesiyle sezimi ve değerlendirilmesi,” Proceedings of the IEEE 22nd Conference on Signal Processing, Communications, and Applications, 23–25 April 2014, Trabzon, Turkey
+
+A. Yurtman, “Recognition and classification of human activities using wearable sensors,” M.S. Thesis, Department of Electrical and Electronics Engineering, Bilkent University, Ankara, Turkey, September 2012.
 
 Van Boxtel, G. (2021). “Signal Processing in R”
 
