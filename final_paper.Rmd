@@ -50,9 +50,27 @@ knitr::include_graphics("plots/sensor_placement.png")
 
 ## Method 1: Machine Learning Methods with Regression Parameters
 
-```{r fig.cap=""}
-knitr::include_graphics("Plot1.png")
-```
+There are 45 time series for every exercise that a subject does. A machine learning method needs some kind of information from each of these series that it can use to differentiate between the exercises. 
+
+From looking at the graphs of the series, some general trends can be seen: the acceleration and gyroscope sensors that are intended to move while the exercise is being performed have high variance clear signals, while the acceleration and gyroscope sensors that are not intended to move while the exercise is being performed have low variance and unclear signals. For the magnemometer measurements, the signals are clear with high variance when the muscle that the sensor is on is contracting while the signals are unclear with low variance when the muscle that the sensor is on is not supposed to be contracting. 
+
+A measurement that captures how clear and high variance a signal is the amplitude of a sin regression. A sin regresison will fit with a higher amplitude when signals are clearer and variance is higher. 
+
+Here are graphs of clear and unclear signals. You can see that the fitted sin regression has a larger amplitude in the series with clear signals compared to the series with poor signals that are mostly just noise.
+
+There are some issues from some series that could cause this strategy to fail. Here is the graph of a series that would cause problems:
+
+****Insert plot1 here****
+
+If a sin regression was fit to this series, it would roughly follow the mean of the series. The amplitude from this sin regresison would not reflect the signals from each repetition of the exercise. To solve this, I fit a spline to each series and used the residuals to obtain a detrended version of each series that a sin regression could fit to follow the repetitions well. I set the penalty term ($\lambda$) to be 0.05 so that the splines don't underfit or overfit to the data.
+
+Here is a graph of the same series with a spline fit to it:
+
+****Insert plot2 here****
+
+Here is a graph of the original series compared to the detrended series:
+
+****Insert plot3 here****
 
 ## Method 2: Dynamic Time Warping
 
@@ -162,6 +180,10 @@ knitr::include_graphics("plots/s1e1_test_set_dtw_distances.png")
 ```
 
 # Results
+
+## Method 1: Machine Learning Methods with Regression Parameters
+
+
 
 ## Method 2: Dynamic Time Warping
 
