@@ -1,0 +1,289 @@
+---
+title: "Physical Therapy Modeling"
+author: "Ethan Straub, Liam Hayes"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+setwd("/Users/ethanstraub/Downloads/pt_classification-master")
+```
+
+# Abstract
+
+Physical therapy is an effective and often necessary part of rehabilitation for patients recovering from surgery or injury. As a result of limited resources, many patients must perform these exercises by themselves or at home with no supervision which can lead to incorrectly performed exercises and sub-optimal rehabilitation. In this paper, we analyze motion sensor data from 5 participants performing 8 exercises in 3 different ways (correctly performed, too fast, and low amplitude). Our goal is to use data from the wearable motion sensors to provide feedback that can help patients consistently perform these exercises correctly. We explore methods using Dynamic Time Warping and Time Series Analysis to generate this feedback. We found that Dynamic Time Warping methods can classify individual exercises with 100% accuracy, identify when and how many reps of an exercise is performed in a session with 75.63% accuracy, and very poorly identify the quality of each rep with 5.42% accuracy. When using detrending and sin regression in combination with random forests, our best model is able to classify exercises with 80% accuracy. These methods give a promising start to a way to provide feedback on independently performed physical therapy exercises using wearable motion sensors but needs some more refinement to give consistent and useful feedback to patients.
+
+# Introduction
+
+When providing physical therapy, most physical therapists rely on their professional oversight and patient discretion to ensure proper execution of an exercise. After a few initial sessions with the patient, it is usually prescribed to continue these exercises at home. Although this has proven effective, it can result in a sub-optimal success rate due to time constraints of the therapist and lack of feedback for patients practicing at home.
+
+It is clear to see that the standard practice does not ensure maximum utility from this method of rehabilitation. In this paper, we will explore some methods to evaluate physical therapy sessions based on motion sensors placed on the patient. This will allow us to provide consistent feedback to patients practicing at home and improve the effectiveness of physical therapy treatments.
+
+The methods in this paper could be used for an exercise application. Many people use an app called Strava to log their runs, hikes, and bicycle rides. Strava users can see their friends' activities and compete for record times on certain trails or roads. A major issue with Strava is that people can cheat by doing things like driving part of their "run", or logging a bicycle ride as a run. If an app like Strava could connect to a sensor that could accurately identify the activity that someone is performing, the app would be able to catch these cheaters. Additionally, users would be able to see more data on their activities.
+
+We have four primary objectives. First, we want to be able to correctly identify the exercise a patient is doing. If we have sensors on a new subject, can we use data from previous subjects to determine what exercise the new subject is doing? Second, can we determine the quality of a rep? Exercises can be incorrectly performed by being too fast or with a limited range of motion, so we want to be able to detect these errors as well. Third, do we need all of our data to be able to complete the first two objectives? Reducing the amount of sensors a patient has to wear improves ease of use as well as reduces the complexity of our algorithms. And finally, how long does the subject need to be performing the exercise in order to correctly classify the exercise. If the patient only has time to do a few reps, ideally we will still be able to determine what exercise they are performing by using previous data.
+
+# Data
+
+Our data was collected from the UC Irvine Machine Learning Repository with accompanying paper "Automated Evaluation of Physical Therapy Exercises Using Multi-template Dynamic Time Warping on Wearable Sensor Signals" \textcolor{red}{citation here}.
+
+The data set contains 5 sessions. Each session, a subject performs 8 different exercises while wearing 5 motion sensors on different parts of their body. Each sensor takes 9 measurements at 25 Hz while the subject is performing the exercise. In all directions ($x$, $y$, and $z$) the sensor calculates the acceleration ($\frac{\text{meters}}{\text{second}^2}$), angular rate ($\frac{\text{radians}}{\text{second}}$), and magnetic field (relative). This means that with 5 sensors and 9 measurements per sensor, there are 45 continuous measurements that describe a session. Figure 1 shows what these 45 measurements look like for the first exercise in the first session in our data set.
+
+
+```{r fig.cap="Example of data for a signle session", fig.align='center'}
+knitr::include_graphics("plots/e1_s1_all_signals.png")
+```
+
+There are two data sets for each combination of subject, exercise, and sensor. A template session which contains 3 executions of each 3 execution types (correct, too fast, and low amplitude), and a test session which contains 10 executions of each 3 execution types.
+
+## Exercises in the Data
+
+As mentioned previously, we have 8 different exercises in our data. The four lower body exercises are exercises 1, 3, 4, and 5. The four upper body exercises are 2, 6, 7, and 8. Diagrams of these can be seen in figure 2. There are also different sensor configurations for lower and upper body exercises shown in figure 3.
+
+```{r fig.cap="Diagram of the 8 exercises", out.width="50%", fig.align='center'}
+knitr::include_graphics("plots/exercise_diagrams.png")
+```
+
+```{r fig.cap="Diagram of sensor placement"}
+knitr::include_graphics("plots/sensor_placement.png")
+```
+
+# Methods
+
+## Method 1: Machine Learning Methods with Regression Parameters
+
+There are 45 time series for every exercise that a subject does. A machine learning method needs some kind of information from each of these series that it can use to differentiate between the exercises. 
+
+From looking at the graphs of the series, some general trends can be seen: the acceleration and gyroscope sensors that are supposed to be moving while the exercise is being performed have clear, high variance signals. The acceleration and gyroscope sensors that are not intended to move while the exercise is being performed have unclear, low variance signals. For the magnemometer measurements, the signals have high variance when the muscle that the sensor is on is contracting while the signals have low variance when the muscle that the sensor is on is not supposed to be contracting. 
+
+A measurement that captures how clear and high variance a signal is the amplitude of a fitted sin regression. Here are graphs of clear and unclear signals with a sin regression fitted to it. You can see that the sin regression has a larger amplitude in the series with clear signals compared to the series with poor signals that are mostly just noise.
+
+```{r fig.cap="Fitting Sin Regression"}
+knitr::include_graphics("plots/sin_reg.png")
+```
+
+There are some issues from some series that could cause this strategy to fail. Here is the graph of a series that would cause problems:
+
+```{r fig.cap="Original Series"}
+knitr::include_graphics("plots/non_stationary.png")
+```
+
+If a sin regression was fit to this series, it would roughly follow the mean of the series. The amplitude from this sin regression would not reflect the signals from each repetition of the exercise. To solve this,  a spline was fitted to each series and used the residuals to obtain a detrended version of each series that a sin regression could fit to follow the repetitions well. The penalty term for these splines ($\lambda$) was set at 0.05 so that the splines don't underfit or overfit to the data.
+
+Here is a graph of the same series with the a spline fit to it:
+
+```{r fig.cap="Original Series with Spline"}
+knitr::include_graphics("plots/original_series.png")
+```
+
+Here is a graph of the original series compared to the detrended series. You can see how the constant mean of the detrended series makes it a better option to fit a sin regression to.
+
+```{r fig.cap="Detrended Series"}
+knitr::include_graphics("plots/detrended_series.png")
+```
+
+This detrending works great until the series is too short because the splines do not fit through the mean of the series. Therefore, we usethe original series rather than the detrended series when we are using increments of less than 15 seconds. Here's an example of this. You can see that a sin regresison would fit better to the original series compared to the detrended series.
+
+```{r fig.cap="Detrending a Short Series"}
+knitr::include_graphics("plots/short_series.png")
+```
+
+The next graphic is a glimpse of a feature matrix made from the amplitudes of the sin regressions that were fitted to the detrended versions of each series. The full matrix is 40 rows by 45 columns. Each row represents a subject performing an exercise (5 subjects x 8 exercises = 40). Each column represents a measurement from a sensor (5 sensors x 9 measurements per sensor = 45).
+
+```{r fig.cap="Feature Matrix"}
+knitr::include_graphics("plots/table.png")
+```
+
+We used this matrix as the feature matrix and the corresponding exercise numbers as the labels in a few classification methods: k-nearest-neighbors, support vector machines, and random forests. The results of these methods are posted further in the paper.
+
+
+## Method 2: Dynamic Time Warping
+
+Dynamic time warping (DTW) is an algorithm that "stretches and squeezes" time to align and compare signals. There are many versions of this algorithm, but the type we use is already implemented in the DTW package in R (Giorgino, 2009). Our chosen step pattern is typeIIIc as described by Myers (1980). A visualization of how DTW aligns two signals can be found in figure \textcolor{red}{fig number}.
+
+```{r fig.cap="DTW aligning two signals from different sessions"}
+knitr::include_graphics("plots/dtw.png")
+```
+
+### Classifying With DTW
+
+In order to classify an exercise $e$, we go through the following steps:
+
+1.  Find the average signal for each 8 exercise types.
+2.  Select the $n$ highest variance signals to compare.
+3.  Compare the $n$ highest variance signals from $e$ to the corresponding signals from each 8 average exercises using DTW and sum up the $n$ distance measures.
+4.  Classify as the exercise with the lowest total distance measure.
+
+#### Step 1: Finding the Average Signal For Each Exercise
+
+The purpose of finding the average signal for each exercise is to have a benchmark to compare against. Averaging reduces variance when more data points are averaged over, so by averaging we can remove variance and get closer to the core of what makes the exercise this particular exercise.
+
+As a quick recap: we have 45 continuous measurements that describe an exercise. We want to keep this shape when we average because we want to be able to compare individual exercises against the average. So, we will go signal by signal and find the average for each of the 45 continuous signals.
+
+Let's look at the process for finding the average of one signal. Once we understand that, we can repeat for all other signals of the exercise. In figure \textcolor{red}{fig number} we have 5 original signals, each from different sessions and corresponding to exercise 1, sensor 2, acceleration in the x direction. We want to find the average of these 5 signals.
+
+```{r fig.cap="Original unaligned signals"}
+knitr::include_graphics("plots/unaligned.png")
+```
+
+The first step is to align these signals. The DTW R package returns two vectors that can be used to align two signals $s_1$ and $s_2$. Let's suppose $s_1$ is the longer signal and therefore the one that will remain unchaged. The vector that corresponds to $s_1$, $v_1$, contains indices of the vector that is remaining unchanged. $v_1$ just contains the indexes of $s_1$. The second vector $v_2$ corresponds to $s_2$ and is the length of the first vector, but might repeat or skip numbers to match a point on $s_2$ to its closest match on $s_1$. For example, if the fifth index of $s_2$ matches best with the seventh index of $s_1$, 5 will be in the seventh spot of $v_2$. Here's a simple example where the best alignment is stretching the first part of $s_2$:
+
+$$
+v_1 = (1,2,3,4,5,6,7,8,9,10,...)
+$$
+
+$$
+v_2 = (1,2,2,3,4,4,5,6,7,7,...)
+$$
+
+With these vectors we align the signals one by one, aligning the shorter signal to the longest signal. After this is done, we get the signals in figure \textcolor{red}{fig num}.
+
+```{r fig.cap="Aligned signals"}
+knitr::include_graphics("plots/aligned.png")
+```
+
+Finally, we can take the average at each index and we have our average signal (figure \textcolor{red}{fig num}). Repeat for each 45 signals that describe the exercise and we have a set of signals that describe the average exercise.
+
+```{r fig.cap="Average signal"}
+knitr::include_graphics("plots/average.png")
+```
+
+#### Step 2: Select the n Highest Variance Signals to Compare
+
+Comparing 45 signals is a lot of computation. However, looking back at figure 1, many of the signals don't contain a lot of information. Some signals are flat, noisy, or independent of the execution of the rep. Our theory is that the signals with the highest variance tend to contain more information about the rep. Using LOOCV, we tested $n=(1,2,3,...,45)$ and chose the model that minimized n while maintaining accuracy. While on the topic of tuning parameters, it's worth mentioning we also tuned a parameter $w$ that represents a smoothing window. This is a just simple moving average with a window of $w$ that we tuned alongside $n$.
+
+#### Step 3: Compare the n Highest Variance Signals
+
+Once we have $n$, we will select the $n$ highest variance signals from the exercise we are trying to classify. This is done by computing the variance for each of the 45 signals and ordering them from greatest to least variance. Select the first $n$ of these and then compare to the corresponding signals in the average exercises.
+
+\newpage
+
+#### Step 4: Classify 
+
+After we compare the $n$ signals, we end up with $n$ distance measures for each average exercise. Our distance measure will be as follows:
+
+$$
+D_e = \sum_{i=1}^n d_{ei}
+$$
+
+$$
+\text{Where } e \text{ is the exercise number and } 
+$$
+$$ d_{ei} \text{ is the distance measure of exercise } e \text{ from the } i^{th} \text{ highest variance signal}
+$$
+
+Our classification will be $e$ such that $D_e = inf\{D_j\}$ for $j \in 1:8$
+
+### Identifying Reps with DTW
+
+When we have a session with multiple reps being performed, it can be helpful to be able to identify reps and know when they are being done. This can help with rep and set counting to asses the effectiveness of a session. Figure \textcolor{red}{fig num} is an example session with 10 reps, highlighted in green.
+
+```{r fig.cap="Example session with 10 reps"}
+knitr::include_graphics("plots/s1e1_test_set_highlighted.png")
+```
+
+In order to find when an exercise is happening, we will use the average exercises again. For each average exercise, we will:
+
+1.  Compare the average exercise against a sliding window of the same size across the session.
+2.  Store the distance measure for each window in a vector.
+
+Once we have the 8 distance measure vectors, we will:
+
+1.  Select the vector with the lowest mean.
+2.  Find the local minima of that vector.
+
+This algorithm is operating under a key assumption. We are assuming that the subject is only performing one exercise during the whole session. If they are not, we would have to adjust to segment the distance vectors and choose the segments with the lowest mean.
+
+Going back to our example session, after we compare our average exercises against the sliding windows, we get 8 distance vectors corresponding to each exercise in our data (figure \textcolor{red}{fig num}). This example is from session 1 exercise 1, so it is fitting that the distance vector with the lowest mean corresponds to exercise 1. You'll also see that the local minima of this vector is right in the middle of the reps (figure \textcolor{red}{fig num}). We can also adjust the sensitivity of the identifying the local minima so we don't overestimate the number of reps.
+
+```{r fig.cap="Distance vectors"}
+knitr::include_graphics("plots/s1e1_dtw_distances.png")
+```
+
+```{r fig.cap="Distance vector and session reps in the same graph"}
+knitr::include_graphics("plots/s1e1_test_set_dtw_distances.png")
+```
+
+# Results
+
+## Method 1: Machine Learning Methods with Regression Parameters
+
+To find the best parameters for these methods, we used 5 fold cross validation where each fold is all of the data from 1 subject. This way, a subject is not evaluated on a classifier that was trained using other exercises from that subject. 
+
+Using k-nearest neighbors, the best parameters are: weights = uniform (each nearest neighbor contributes the same weight in the classification decision), k = 1 (1 neighbor), and p = 1 (p = 1 means the distances are manhattan distances). The estimated accuracy of this classifier is 0.675.
+
+Using support vector machines, the best parameters are: C = 100 (regularization parameter), and kernel = linear. The estimated accuracy of this classifier is also 0.675.
+
+Using random forests, the best parameters are: n_estimators = 50 (50 decision trees in the forest). The estimated accuracy of this classifier is 0.8.
+
+We also tried using the variances of the series instead of the amplitudes of fitted sin regressions in the feature matrix with a random forest model. The estimated accuracy of this classifier is also 0.775.
+
+The feature matrices so far used the 5 sensor numbers (1 through 5) to differentiate between the sensors. But if we use sensor locations instead of sensor numbers, there are 8 sensor locations (5 for lower body exercises and 5 for upper body exercises. But 2 of the sensors are in the same location for both upper and lower body exercises). The next random forest classifier gives the classifier information on sensor locations by filling in zeroes when there is no sensor at a given location during the exercise. This classifier has an estimated accuracy of 0.875. 0.875 is the best accuracy that we were able to get using machine learning methods. Here is a confusion matrix from this classifier. 
+
+```{r fig.cap="Confusion Matrix"}
+knitr::include_graphics("plots/conf_mat.png")
+```
+
+All of the classifiers so far had had a training accuracy of 100% while the test accuracies lagged far behind. This is not surprising given the fact that the feature matrices have more columns than rows. We tried using principal component analysis in an attempt to stop overfitting to the training set, but accuracy did not improve. 
+
+```{r fig.cap="Principal Component Analysis"}
+knitr::include_graphics("PCA.png")
+```
+
+We also tried using smaller time intervals or less sensor measurements in the feature matrices. But this did not improve accuracy either. Note that in the next table, the classifiers that used smaller time intervals used intervals where the patients were doing high quality reps.
+
+```{r fig.cap="Other Methods"}
+knitr::include_graphics("other.png")
+```
+
+With so few subjects, a more deterministic method like Dynamic Time Warping can outperform random forests.
+
+## Method 2: Dynamic Time Warping
+
+### Classification
+
+With classification, we had 2 tuning parameters. A smoothing window ($w$) and the number of signals to compare ($n$). Using LOOCV, we tried to minimize $n$ while maintaining accuracy. We found that $w=10$ and $n=28$ does this best.
+
+In terms of testing, we trained on sessions 2-5 and tested on session 1. With $w=10$ and $n=28$, we got 100% accuracy on our test set. This includes different execution types as well, i.e. too fast and low amplitude reps.
+
+### Identifying Reps
+
+Testing for identifying reps is a little more complicated. We used the final classification model to use on the sliding window and likewise trained on sessions 2-5 and tested on session 1. Once we found our local minima, the criteria we used to test is as follows.
+
+If the local minima is:
+
+1.  Within the range of when the exercise is happening, classify as correct. 
+
+2.  Outside of the range of when the exercise is happening, classify as incorrect.
+
+3.  Within the range of an exercise that already has a local minima assigned to it, classify as incorrect.
+
+With this criteria, we got 4 accuracy measures:
+
+1.  75.63% accuracy overall.
+
+2.  98.75% accuracy on correctly performed exercises.
+
+3.  81.25% accuracy on exercises performed too quickly.
+
+4.  45% accuracy on low amplitude exercises.
+
+# Conclusions, Limitations, and Improvements
+
+While we are able to classify exercises based on motion sensors with very good accuracy, there are a few limitations that must be addressed before this can be used in a real physical therapy setting. In order to provide quality feedback to a patient, our algorithms should be able to give results in a timely manner. The DTW methods are quite slow, so this could be optimized further.
+
+Another improvement that we were not able to complete is identifying the quality of a rep. If a patient does a rep too fast, it would be helpful to tell them to slow down. Providing feedback on common execution errors would make this much more worth the effort of putting on sensors before every physical therapy session.
+
+# References
+
+A. Yurtman and B. Barshan, “Automated evaluation of physical therapy exercises using multi-template dynamic time warping on wearable sensor signals,” Computer Methods and Programs in Biomedicine, 117(2):189–207, November 2014 (DOI: 10.1016/j.cmpb.2014.07.003).
+
+A. Yurtman and B. Barshan, “Detection and evaluation of physical therapy exercises by dynamic time warping using wearable motion sensor units,” Information Sciences and Systems 2013 - Proceedings of the 28th International Symposium on Computer and Information Sciences, 28-29 October 2013, Paris, France, Lecture Notes in Electrical Engineering, vol.264, E. Gelenbe and R. Lent (eds.), Springer International Publishing, Switzerland, pp. 305–314, 2013.
+
+A. Yurtman and B. Barshan, “Detection and evaluation of physical therapy exercises from wearable motion sensor signals by dynamic time warping (Fizik tedavi egzersizlerinin giyilebilir hareket algılayıcıları işaretlerinden dinamik zaman bükmesiyle sezimi ve değerlendirilmesi,” Proceedings of the IEEE 22nd Conference on Signal Processing, Communications, and Applications, 23–25 April 2014, Trabzon, Turkey
+
+A. Yurtman, “Recognition and classification of human activities using wearable sensors,” M.S. Thesis, Department of Electrical and Electronics Engineering, Bilkent University, Ankara, Turkey, September 2012.
+
+Van Boxtel, G. (2021). “Signal Processing in R”
+
+Giorgino, T. (2009). “Computing and Visualizing Dynamic Time Warping Alignments in R: The dtw Package” Journal of Statistical Software
